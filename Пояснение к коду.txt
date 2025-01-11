@@ -1,0 +1,221 @@
+//создаем и возвращаем заголовок приложения
+  function createAppTitle(title) {
+    let appTitle = document.createElement('h2'); //объявляем переменную appTitle и присваеваем ей новый дом-элемент с тегом h2
+    appTitle.innerHTML = title; //добавляем элемент заголовок в верстку с тегом h2, присваеваем переменной свойство innerHTML
+    return appTitle;// возвращаем дейтсвие с создаем заголовка приложения, чтобы при загрузке приложения каждый раз его генерировать 
+  }
+
+//создаем и возвращаем форму для создания дела 
+    function createTodoItemForm() {
+      let form = document.createElement('form'); //создаем элемент самой формы с помощью document.createElement
+      let input = document.createElement('input'); //создаем поле для ввода
+      let buttonWrapper = document.createElement('div'); //создаем вспомогательный элемент. который будет помогать стилизовать кнопку
+      let button = document.createElement('button'); //создаем саму кнопку
+      
+      //создаем атрибуты для элементов выше
+      form.classList.add('input-group', 'mb-3');
+      input.classList.add('form-control');
+      input.placeholder = 'Введите название нового дела';
+      buttonWrapper.classList.add('input-group-append');
+      button.classList.add('btn', 'btn-primary');
+      button.textContent = 'Добавить дело';
+      button.setAttribute('disabled', 'disabled'); //делает кнопку неактивной при загрузки страницы
+
+      //объединяем элементы
+      buttonWrapper.append(button); //buttonWrapper вкладываем в button
+      form.append(input); //в форму вкладываем input
+      form.append(buttonWrapper); //в форму вкладываем кнопку 
+
+      return {
+        form,
+        input,
+        button,
+      }; //возвращаем результат создания элементов и их атрибутов,влкадывание элементов и чтобы иметь к ним доступ
+    }
+
+    //создаем и возвращаем список элементов
+    function createTodoList() {
+      let list = document.createElement('ul'); //создаем переменную лист и присваиваем новый элемент ul
+      list.classList.add('list-group'); //создаем атрибуты для данного списка
+      return list; //возвращаем создание данного списка
+    }
+
+    //создаем функцию создания дела
+    //todoElement - элемент списка. чье название будем брать для названия дела
+    //todoArray - массив элементов, то есть массив задач
+    //keyLocalStorage - для записи и хранения данных на стороне клиента
+    function createTodoItem (todoElement,todoArray,keyLocalStorage) {
+      let item = document.createElement('li'); //создаем элемент списка
+
+      //помещаем кнопки в элемент. который позволит их красиво показать
+      let buttonGroup = document.createElement('div');//создаем группу кнопок, которая нужна для того, чтобы красиво объединить кнопки внутри одного элемента
+      let doneButton = document.createElement('button');//создаем кнопку готовности дела
+      let deleteButton = document.createElement('button');//создаем кнопку удаления дела
+
+      //устаналиваем стили для элемента спискаи и размещения кнопок
+      //в правой части с помощью flex свойств
+      item.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
+      item.textContent = todoElement.name;//берем у элемента списка его название
+
+      //стилизация кнопок по статусам
+      buttonGroup.classList.add('btn-group', 'btn-group-sm');
+      doneButton.classList.add('btn', 'btn-success');
+      doneButton.textContent = 'Готово';
+      deleteButton.classList.add('btn', 'btn-danger');
+      deleteButton.textContent = 'Удалить';
+
+      //вкладываем кнопки в отдельный элемент, чтобы они были в одном блоке
+      buttonGroup.append(doneButton);
+      buttonGroup.append(deleteButton);
+      item.append(buttonGroup);
+
+      if (todoElement.done) { // если true у статуса задачи, то прописываем определенные стили
+        item.classList.add('list-group-item-success');
+      }
+
+      //добавляем обработчки на кнопки
+      doneButton.addEventListener('click', function () {
+        item.classList.toggle('list-group-item-success');//с помощью функции toggle добавляем или убираем list-group-item-sucsess
+        todoElement.done = item.classList.contains('list-group-item-success');
+        saveDataToLocalStorage(keyLocalStorage, todoArray);
+      });
+
+      deleteButton.addEventListener('click', function () {
+        if (confirm('Вы уверены?')) { //функция confirm встроена в браузер и вернет true если пользотватель нажал "Да"
+          let index = todoArray.findIndex((elem) => elem.id === todoElement.id); //объявляем переменную index и присваиваем ей результат работы, идем в массив 
+          //из списка дел и находим через метод findIndex находим элемент в массиве и его айди
+          todoArray.splice(index, 1);// с помощью метода splice берем нужный элемент из массива и отделяем его для дальнейшей работы
+          item.remove();//удаляем данный элемент. то есть задачу
+          saveDataToLocalStorage(keyLocalStorage, todoArray) //обращаемся к локальному хранилищу и из массива дел удаляем выбраннное выше
+        }
+      });
+
+      //делаем для приложения доступ к самому элементу списка и кнопкам, чтобы обработать событие
+      return {
+        item,
+        doneButton,
+        deleteButton,
+      };
+
+    }
+
+function createTodoApp(container, title = 'Список дел', listName) {
+  //let container = document.getElementById('todo-app'); //контейнер, div с id todo-app, затем мы добавили container в аргументы функции так. 
+  // как содержимое будет изменяться
+
+  //вызываем по очередно функции
+  let todoArray = getDataFromLocalStorage(listName) || [];//вызываем функцию, которая принимает значение из списка listname и возвращает его или возвращает пустоту
+  let todoAppTitle = createAppTitle(title);//вернет сам дом элемент. который можно разместить на странице, заменили "Список дел" на аргумент.
+  //  который будем передавать в функции
+  let todoItemForm = createTodoItemForm();//вернет объект,в котором есть форма
+  let todoList = createTodoList(); //вернет сам дом элемент. который можно разместить на странице
+  createTodoApp.todoArray = todoArray;//присваиваем функции результат работы над массивом?
+  //размещаем результат работы функций в контейнере страницы
+  container.append(todoAppTitle,todoItemForm.form,todoList); //todoItemForm.form берем именно форму
+
+  // добавление элементов из LocalStorage
+  if (todoArray.length) { //если длина массива со списком дел есть, то с помощью метода forEach перебираем элементы массива и возращаем его 
+    todoArray.forEach((item) => {
+    let todoItem = createTodoItem(item, todoArray, listName);//побъявляем переменную todoitem и присваиваем ей результат работы функции createTodoItem
+    todoList.append(todoItem.item);//добавляем в список задач сам элемент, то есть задачу
+    });
+  }
+
+  // манипуляции с кнопкой делает ее заблокированной пока мы не начнем вводить что-то в поле
+  todoItemForm.form.addEventListener("input", function () {
+    if (!todoItemForm.input.value) {
+      todoItemForm.button.setAttribute('disabled', 'disabled');
+    } else {
+      todoItemForm.button.removeAttribute('disabled');
+    };
+  });
+
+  //генерируем id задачи
+  function idForElement() {
+    if (!todoArray.length) return 1; //если длина массива не 1, то вернем 1
+    else return todoArray[todoArray.length - 1].id + 1;// в другом случае возвращаем найденный id элемента массива + 1, начав с 1 элемента
+  };
+
+   // манипуляции с кнопкой делает ее заблокированной пока мы не начнем вводить что-то в поле
+   todoItemForm.form.addEventListener("input", function () {
+    if (!todoItemForm.input.value) {
+      todoItemForm.button.setAttribute('disabled', 'disabled');
+    } else {
+      todoItemForm.button.removeAttribute('disabled');
+    };
+  });
+
+  //браузер создает событие submit на форме по нажатию Enter или на кнопку создания дела 
+  todoItemForm.form.addEventListener('submit', function(e){
+    //эта строчка необходима чтобы предотвратить стандартное бразуера (перезагрузка страницы)
+    e.preventDefault();
+
+      //игнорируем создание дела если пользователь ничего не ввел
+      if (!todoItemForm.input.value) {
+        return;
+      }
+
+      let todoElement = { //объявляем переменную todoElement и присваеиваем массив с 3 аргументами (id,name и done)
+        id: idForElement(),
+        name: todoItemForm.input.value,
+        done: false,
+      };
+
+    todoArray.push(todoElement);
+    let todoItem = createTodoItem(todoElement, todoArray, listName); // создание li
+    saveDataToLocalStorage(listName, todoArray);
+
+    //let container = document.getElementById('todo-app'); //контейнер, div с id todo-app
+
+    //создаем и добавляем новое дело в список с названием из поля ввода
+    //todoList.append(createTodoItem(todoItemForm.input.value).item);//
+
+    //let todoItem = createTodoItem(todoItemForm.input.value); //помещаем в переменную результат работы функции createTodoItem
+    todoList.append(todoItem.item); // добавление li в общий список
+    todoItemForm.input.value = ''; // изменение в изначальное положение,чтобы не убирать вручную
+    todoItemForm.button.setAttribute('disabled', 'disabled'); // изменение кнопки в изначальное положение
+  })
+};
+
+//создаем функцию, которая вернет данные в виде строки
+function dataToJson(data) {
+  return JSON.stringify(data);
+};
+
+//создаем функцию, которая вернет входящую строку, преобразовав строки в объекты
+function jsonToData(data) {
+  return JSON.parse(data);
+};
+
+//создаем функцию. которая вернет данные из LocalStorage в формате списка задач
+function getData(listName) {
+  return localStorage.getItem(listName);
+};
+
+//создаем функцию, которая устанавливает для объекта нужный формат , listName - формат в котором нужен объект, data - строка с данными
+function setData(listName, data) {
+  return localStorage.setItem(listName, data);
+};
+
+//создаем функцию, которая устанавливает ключ данных для дальнейшей их передачи
+function saveDataToLocalStorage(key, data) {
+  const jsonData = dataToJson(data);
+  setData(key, jsonData);
+}
+
+//создаем функцию, которая возвращает ключ данных
+function getDataFromLocalStorage(key) {
+  function getCartData() {
+    let cartData = localStorage.getItem(key);
+    return cartData;
+  }
+  let result = getCartData();
+  return jsonToData(result);
+}
+
+    //document.addEventListener('DOMContentLoaded', function () {
+      //createTodoApp(document.getElementById('my-todos'), 'Мой список дел');
+      //createTodoApp(document.getElementById('mom-todos'), 'Список дел мамы');
+      //createTodoApp(document.getElementById('dad-todos'), 'Список дел папы');
+    //})//вариант вызова функции если html файл не разделен на отдельные файлы 
+window.createTodoApp = createTodoApp;//это нужно чтобы зарегистрировать в глобальном окне функцию создания todoapp
